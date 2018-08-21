@@ -35,6 +35,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -200,34 +201,29 @@ public class ProtectionManager {
     }
 
     public void placePb(final BlockPlaceEvent e) {
+    	if(isProtectedWorld(e.getPlayer().getWorld())){
         e.getPlayer().setItemInHand(air);
         final List<String> lore = e.getItemInHand().getItemMeta().getLore();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
             @Override
             public void run() {
-                String uuidString = lore.get(1).concat("-")
-                        .concat(lore.get(2));
+                String uuidString = lore.get(1).concat("-").concat(lore.get(2));
                 ProtectionBlock pb = getPb(UUID.fromString(uuidString));
                 pb.setPlayerUUID(e.getPlayer().getUniqueId());
                 pb.setPlayerName(e.getPlayer().getName());
                 pb.setLocation(e.getBlock().getLocation());
-                if (plugin.getWG().overlapsUnownedRegion(pb.getPcr(),
-                        e.getPlayer())) {
-                    plugin.sendMessage(e.getPlayer(), ChatColor.RED
-                            + tm.getText("overlaps"));
+                if (plugin.getWG().overlapsUnownedRegion(pb.getPcr(),e.getPlayer())) {
+                    plugin.sendMessage(e.getPlayer(), ChatColor.RED+ tm.getText("overlaps"));
                     revertPlacedPb(pb, e);
                 } else if (!e.getPlayer().hasPermission("pb.place")) {
-                    plugin.sendMessage(e.getPlayer(), ChatColor.RED
-                            + tm.getText("not_permission_active_pb"));
+                    plugin.sendMessage(e.getPlayer(), ChatColor.RED + tm.getText("not_permission_active_pb"));
                     revertPlacedPb(pb, e);
-                } else if (!e.getPlayer().hasPermission("pb.protection.unlimited")
-                        && playersBlocks.get(e.getPlayer().getUniqueId()) != null) {
+                } else if (!e.getPlayer().hasPermission("pb.protection.unlimited") && playersBlocks.get(e.getPlayer().getUniqueId()) != null) {
                     int playerBlocks = playersBlocks.get(e.getPlayer().getUniqueId()).size();
                     if (getMaxProtections(e.getPlayer()) > playerBlocks) {
                         placePb(pb, e);
                     } else {
-                        plugin.sendMessage(e.getPlayer(), ChatColor.RED
-                                + tm.getText("over_pb_limit"));
+                        plugin.sendMessage(e.getPlayer(), ChatColor.RED + tm.getText("over_pb_limit"));
                         revertPlacedPb(pb, e);
                     }
                 } else {
@@ -235,6 +231,25 @@ public class ProtectionManager {
                 }
             }
         });
+    	}else{
+    		e.setCancelled(true);
+    		plugin.sendMessage(e.getPlayer(), ChatColor.RED + "Du darfst das hier nicht setzen!");
+    		
+    	}
+    }
+    
+    public boolean isProtectedWorld(World w){
+    	boolean result = true;
+        List<String> ignoredWorlds = plugin.getConfig().getStringList("ignored.worlds");
+        for (String world : ignoredWorlds) {
+            if (w.getName().equalsIgnoreCase(world)) {
+            	
+            	result = false;
+
+            }
+        }
+		return result;
+    	
     }
 
     private void placePb(ProtectionBlock pb, BlockPlaceEvent e) {
@@ -243,8 +258,7 @@ public class ProtectionManager {
         try {
             createdBlocks.remove(pb);
             placedBlocks.put(e.getBlock().getLocation(), pb);
-            TreeSet<ProtectionBlock> pbs
-                    = playersBlocks.get(e.getPlayer().getUniqueId());
+            TreeSet<ProtectionBlock> pbs = playersBlocks.get(e.getPlayer().getUniqueId());
             if (pbs == null) {
                 pbs = new TreeSet<>();
             }
@@ -260,16 +274,11 @@ public class ProtectionManager {
         } finally {
             _pb_mutex.unlock();
         }
-        if (pb.hasFence()) {
-            pb.drawFence();
-            pb.setFence(false);
-        }
     }
 
     @SuppressWarnings("deprecation")
     public void breakPb(final BlockBreakEvent e) {
         e.setExpToDrop(0);
-
         final ProtectionBlock pb = placedBlocks.get(e.getBlock().getLocation());
         Player player = e.getPlayer();
         if (!pb.getPcr().getOwners().contains(plugin.getWG().wrapPlayer(player))
@@ -297,6 +306,8 @@ public class ProtectionManager {
                     }
                 });
             } else {
+            	e.setCancelled(true);
+            	e.getBlock().getLocation().getBlock().setType(Material.AIR);
                 removePb(pb);
             }
         }
@@ -383,8 +394,7 @@ public class ProtectionManager {
         _pb_mutex.lock();
         try {
             for (ProtectionBlock oPb : placedBlocks.values()) {
-                if (pb.equals(oPb) || oPb.getWorld() == null
-                        || !oPb.getWorld().getUID().equals(pb.getWorld().getUID())) {
+                if (pb.equals(oPb) || oPb.getWorld() == null || !oPb.getWorld().getUID().equals(pb.getWorld().getUID())) {
 
                     continue;
                 }
@@ -635,7 +645,7 @@ public class ProtectionManager {
                     Bukkit.getScheduler().runTask(plugin, new Runnable() {
                         @Override
                         public void run() {
-                            plugin.sendMessage(player, pb.getInfo());
+                            plugin.sendMessage(player, pb.getInfo(player.getWorld()));
                         }
                     });
                 }
@@ -789,7 +799,7 @@ public class ProtectionManager {
                         @Override
                         public void run() {
                             plugin.getWG().setFlag(pb.getPcr(), pb.getWorld(),
-                                    DefaultFlag.fuzzyMatchFlag(flagName), value);
+                                    DefaultFlag.fuzzyMatchFlag(plugin.wg.wgp.getFlagRegistry(), flagName), value);
                         }
                     });
                 }
