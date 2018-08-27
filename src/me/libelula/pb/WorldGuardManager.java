@@ -18,10 +18,25 @@
  */
 package me.libelula.pb;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.logging.Level;
+
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.RegionContainer;
-import org.bukkit.plugin.Plugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.flags.DefaultFlag;
@@ -31,15 +46,6 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeMap;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
 
 /**
  * Class WorldGuardManager of the wgPlugin.
@@ -225,25 +231,33 @@ public class WorldGuardManager {
 		});
 	}
 
-	// CAUTION: UNTESTED CODE HERE
+	// CAUTION: UNTESTED AND UNSAFE CODE HERE
 	public void setFlag(ProtectedRegion pr, World world, Flag flag, Object value) {
-		if ((value instanceof String)) {
-			String str;
-			switch ((str = ((String) value).toLowerCase()).hashCode()) {
-			case 3079692:
-				if (str.equals("deny")) {
-					break;
+		String str = value.toString();
+		if (str.equals("deny")) {
+			pr.setFlag(flag, StateFlag.State.DENY);
+			return;
+		} else if (str.equals("allow")) {
+			pr.setFlag(flag, StateFlag.State.ALLOW);
+			return;
+		} else if (str.contains(",")) {
+			String[] splitted = str.split(", ");
+			if (flag.getName().equalsIgnoreCase("deny-spawn")) {
+				Set<EntityType> data = new HashSet<EntityType>(splitted.length);
+				for (String s : splitted) {
+					for (EntityType e : EntityType.values()) {
+						if (e.getName().equalsIgnoreCase(s)) {
+							data.add(e);
+							return;
+						}
+					}
 				}
-			case 92906313:
-				if (str.equals("allow")) {
-					pr.setFlag(flag, StateFlag.State.ALLOW);
-					return;
-
-				}
-				pr.setFlag(flag, StateFlag.State.DENY);
-				break;
+				pr.setFlag(flag, data);
+			} else {
+				plugin.getLogger().log(Level.WARNING,
+						"Flag " + flag.getName() + " kann nicht verarbeitet werden. (" + value.toString() + ")");
 			}
-			pr.setFlag(flag, value);
+
 		} else {
 			pr.setFlag(flag, value);
 		}
