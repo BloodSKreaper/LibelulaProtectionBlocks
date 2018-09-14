@@ -249,6 +249,8 @@ public class WorldGuardManager {
 						if (e.getName().equalsIgnoreCase(s)) {
 							data.add(e);
 							return;
+						} else {
+
 						}
 					}
 				}

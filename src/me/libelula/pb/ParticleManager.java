@@ -120,7 +120,7 @@ public class ParticleManager {
     	double x = xraw + 0.5;
     	double z = zraw + 0.5;
     	for(double i= 0; i<256;){
-        	w.playEffect(new Location(w, x, i, z), Effect.HAPPY_VILLAGER, 10, 100);
+			w.playEffect(new Location(w, x, i, z), Effect.HAPPY_VILLAGER, 10, 100);
         	i = i +0.5;
     	}
     	
