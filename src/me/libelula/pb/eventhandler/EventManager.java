@@ -16,7 +16,7 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package me.libelula.pb;
+package me.libelula.pb.eventhandler;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
@@ -29,6 +29,8 @@ import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
+
+import me.libelula.pb.Main;
 
 /**
  *

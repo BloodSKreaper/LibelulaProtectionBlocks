@@ -33,6 +33,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import me.libelula.pb.eventhandler.EventManager;
+
 /**
  *
  * @author Diego D'Onofrio <ddonofrio@member.fsf.org>

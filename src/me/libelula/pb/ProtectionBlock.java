@@ -45,7 +45,6 @@ public class ProtectionBlock implements Comparable<ProtectionBlock> {
 
 	private final Main plugin;
 	private boolean hidden;
-	private boolean fence;
 	private Location location;
 	private UUID uuid;
 	private ItemStack is;
@@ -73,18 +72,6 @@ public class ProtectionBlock implements Comparable<ProtectionBlock> {
 	@Override
 	public int compareTo(ProtectionBlock o) {
 		return o.getUuid().compareTo(uuid);
-	}
-
-	public void setFence(boolean active) {
-		if (!active) {
-			if (loreText.remove("+PARTICLES")) {
-				setLoreText(loreText);
-			}
-		} else {
-			loreText.add("+PARTICLES");
-			setLoreText(loreText);
-		}
-		fence = active;
 	}
 
 	public void setHiden(boolean hide) {
@@ -304,41 +291,15 @@ public class ProtectionBlock implements Comparable<ProtectionBlock> {
 		return result;
 	}
 
-	public void drawParticles() {
-		int tic = 0;
-		for (int X = min.getBlockX(); X <= max.getBlockX(); X++) {
-			for (int Z = min.getBlockZ(); Z <= max.getBlockZ(); Z++) {
-				if (X == min.getBlockX() || X == max.getBlockX() || Z == min.getBlockZ() || Z == max.getBlockZ()) {
-					final Location loc = new Location(world, X, location.getBlockY(), Z);
-					final Location locMax = new Location(world, X, location.getBlockY() + 1, Z);
-					tic++;
-					Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
-						@Override
-						public void run() {
-							if (plugin.pm.fenceCanReplace(loc.getBlock().getType())) {
-								loc.getBlock().setType(Material.FENCE);
-							} else if (plugin.pm.fenceCanReplace(locMax.getBlock().getType())) {
-								locMax.getBlock().setType(Material.FENCE);
-							}
-						}
-					}, tic);
-
-				}
-			}
-		}
-	}
-
-	public boolean hasFence() {
-		return fence;
-	}
-
 	public static boolean validateMaterial(Material mat) {
 		return !(!mat.isBlock() || !mat.isSolid() || mat.hasGravity() || mat.isEdible() || mat == Material.AIR
 				|| mat == Material.DIRT || mat == Material.GRASS || mat == Material.ICE || mat == Material.SNOW_BLOCK
-				|| mat == Material.CACTUS || mat == Material.PISTON_BASE || mat == Material.PISTON_EXTENSION
-				|| mat == Material.PISTON_MOVING_PIECE || mat == Material.FURNACE || mat == Material.MYCEL
-				|| mat == Material.LEAVES || mat == Material.LEAVES_2 || mat == Material.IRON_PLATE
-				|| mat == Material.GOLD_PLATE || mat == Material.SPONGE || mat == Material.TNT);
+				|| mat == Material.CACTUS || mat == Material.PISTON || mat == Material.PISTON_HEAD
+				|| mat == Material.FURNACE || mat == Material.MYCELIUM || mat == Material.ACACIA_LEAVES
+				|| mat == Material.BIRCH_LEAVES || mat == Material.DARK_OAK_LEAVES || mat == Material.JUNGLE_LEAVES
+				|| mat == Material.OAK_LEAVES || mat == Material.SPRUCE_LEAVES
+				|| mat == Material.HEAVY_WEIGHTED_PRESSURE_PLATE || mat == Material.LIGHT_WEIGHTED_PRESSURE_PLATE
+				|| mat == Material.SPONGE || mat == Material.TNT);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -346,7 +307,6 @@ public class ProtectionBlock implements Comparable<ProtectionBlock> {
 		ConfigurationSection result = new YamlConfiguration().createSection(uuid.toString());
 		result.set("name", name);
 		result.set("hidden", hidden);
-		result.set("fence", fence);
 		if (location != null) {
 			result.set("placed", YamlUtils.getSection(location));
 		}
@@ -388,7 +348,6 @@ public class ProtectionBlock implements Comparable<ProtectionBlock> {
 	public void load(ConfigurationSection cs) {
 		name = cs.getString("name");
 		hidden = cs.getBoolean("hidden");
-		fence = cs.getBoolean("fence");
 		String uuidString = cs.getString("uuid");
 		String ownerUuidString = cs.getString("owner.uuid");
 		if (ownerUuidString != null) {

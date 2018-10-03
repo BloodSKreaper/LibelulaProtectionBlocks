@@ -29,23 +29,23 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.sk89q.worldedit.Vector;
-import com.sk89q.worldguard.LocalPlayer;
-import com.sk89q.worldguard.bukkit.RegionContainer;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
-import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 
 /**
  * Class WorldGuardManager of the wgPlugin.
@@ -57,6 +57,7 @@ public class WorldGuardManager {
 
 	private final Main plugin;
 	public WorldGuardPlugin wgp;
+	public WorldGuard worldguard;
 	private RegionContainer container;
 	private final TextManager tm;
 	private final TreeMap<Flag<?>, String> defaultKeys;
@@ -87,17 +88,19 @@ public class WorldGuardManager {
 	}
 
 	public boolean isWorldGuardActive() {
-		return wgp != null;
+		return worldguard != null;
 	}
 
 	public void initialize() {
 		Plugin wgPlugin;
 		wgPlugin = plugin.getServer().getPluginManager().getPlugin("WorldGuard");
-		if (wgPlugin == null || !(wgPlugin instanceof WorldGuardPlugin)) {
-			this.wgp = null;
+		wgp = (WorldGuardPlugin) wgPlugin;
+		if (wgPlugin == null) {
+			this.worldguard = null;
 		} else {
-			wgp = (WorldGuardPlugin) wgPlugin;
-			container = wgp.getRegionContainer();
+
+			worldguard = WorldGuard.getInstance();
+			container = worldguard.getPlatform().getRegionContainer();
 			Bukkit.getScheduler().runTask(plugin, new Runnable() {
 				@Override
 				public void run() {
@@ -115,7 +118,7 @@ public class WorldGuardManager {
 				continue;
 			}
 
-			RegionManager regions = container.get(world);
+			RegionManager regions = container.get(BukkitAdapter.adapt(world));
 
 			if (regions != null) {
 				regionManagers.put(world, regions);
@@ -134,13 +137,13 @@ public class WorldGuardManager {
 					switch (keyName) {
 					case "greeting":
 					case "farewell":
-						defaultKeys.put(DefaultFlag.fuzzyMatchFlag(wgp.getFlagRegistry(), keyName),
+						defaultKeys.put(Flags.fuzzyMatchFlag(worldguard.getFlagRegistry(), keyName),
 								tm.getText(cs.getString(keyName)));
 						break;
 					default:
-						if (DefaultFlag.fuzzyMatchFlag(wgp.getFlagRegistry(), keyName) != null) {
+						if (Flags.fuzzyMatchFlag(worldguard.getFlagRegistry(), keyName) != null) {
 
-							defaultKeys.put(DefaultFlag.fuzzyMatchFlag(wgp.getFlagRegistry(), keyName),
+							defaultKeys.put(Flags.fuzzyMatchFlag(worldguard.getFlagRegistry(), keyName),
 									cs.getString(keyName));
 
 							plugin.sendMessage(plugin.getConsole(),
@@ -159,7 +162,8 @@ public class WorldGuardManager {
 	}
 
 	public ProtectedCuboidRegion getProtectedRegion(ProtectionBlock pb) {
-		RegionManager regions = container.get(pb.getLocation().getWorld());
+
+		RegionManager regions = container.get(BukkitAdapter.adapt(pb.getLocation().getWorld()));
 		ProtectedCuboidRegion pcr = null;
 		if (regions != null) {
 			pcr = (ProtectedCuboidRegion) regions.getRegion(pb.getRegionName());
@@ -186,7 +190,7 @@ public class WorldGuardManager {
 	}
 
 	public void createRegion(final ProtectionBlock pb) {
-		final RegionManager regions = container.get(pb.getLocation().getWorld());
+		final RegionManager regions = container.get(BukkitAdapter.adapt(pb.getLocation().getWorld()));
 		if (regions != null) {
 			Bukkit.getScheduler().runTask(plugin, new Runnable() {
 				@Override
@@ -210,7 +214,7 @@ public class WorldGuardManager {
 		Bukkit.getScheduler().runTask(plugin, new Runnable() {
 			@Override
 			public void run() {
-				final RegionManager regions = container.get(pb.getLocation().getWorld());
+				final RegionManager regions = container.get(BukkitAdapter.adapt(pb.getLocation().getWorld()));
 				if (regions != null) {
 					Bukkit.getScheduler().runTask(plugin, new Runnable() {
 						@Override
@@ -266,17 +270,13 @@ public class WorldGuardManager {
 	}
 
 	public boolean overlapsUnownedRegion(ProtectedRegion region, Player player) {
-		RegionManager regions = container.get(player.getWorld());
+		RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
 		if (regions != null) {
 			return regions.overlapsUnownedRegion(region, wgp.wrapPlayer(player));
 		} else {
 			return false;
 		}
 
-	}
-
-	public LocalPlayer wrapPlayer(Player player) {
-		return wgp.wrapPlayer(player);
 	}
 
 	public void addMemberPlayer(final ProtectedRegion pr, final String playerName) {

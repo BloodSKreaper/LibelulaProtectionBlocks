@@ -18,7 +18,6 @@
  */
 package me.libelula.pb;
 
-import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -37,6 +37,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -47,6 +48,8 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+
+import com.sk89q.worldguard.protection.flags.Flags;
 
 /**
  *
@@ -105,21 +108,6 @@ public class ProtectionManager {
 
 	public void initialize() {
 		load();
-	}
-
-	public void addFenceFlag(Player player) {
-		ItemStack itemInHand = player.getItemInHand();
-		ProtectionBlock pb = getPB(itemInHand);
-		if (pb != null) {
-			if (pb.hasFence()) {
-				plugin.sendMessage(player, ChatColor.RED + tm.getText("already_fence"));
-			} else {
-				pb.setFence(true);
-				player.setItemInHand(pb.getItemStack());
-			}
-		} else {
-			plugin.sendMessage(player, ChatColor.RED + tm.getText("block_not_pb"));
-		}
 	}
 
 	public boolean createProtectionBlock(Player player, int maxX, int maxY, int maxZ) {
@@ -273,19 +261,18 @@ public class ProtectionManager {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	public void breakPb(final BlockBreakEvent e) {
 		e.setExpToDrop(0);
 		final ProtectionBlock pb = placedBlocks.get(e.getBlock().getLocation());
 		Player player = e.getPlayer();
-		if (!pb.getPcr().getOwners().contains(plugin.getWG().wrapPlayer(player))
+		if (!pb.getPcr().getOwners().contains(plugin.wg.wgp.wrapPlayer(player))
 				&& !e.getPlayer().hasPermission("pb.break.others")) {
 			plugin.sendMessage(player, ChatColor.RED + tm.getText("not_owned_by_you"));
 			Bukkit.getScheduler().runTask(plugin, new Runnable() {
 				@Override
 				public void run() {
 					e.getBlock().setType(pb.getMaterial());
-					e.getBlock().setData(pb.getItemStack().getData().getData());
+					e.getBlock().setBlockData((BlockData) pb.getItemStack().getData());
 				}
 			});
 		} else {
@@ -296,7 +283,7 @@ public class ProtectionManager {
 					@Override
 					public void run() {
 						e.getBlock().setType(pb.getMaterial());
-						e.getBlock().setData(pb.getItemStack().getData().getData());
+						e.getBlock().setBlockData((BlockData) pb.getItemStack().getData());
 					}
 				});
 			} else {
@@ -552,7 +539,6 @@ public class ProtectionManager {
 		});
 	}
 
-	@SuppressWarnings("deprecation")
 	public void unhide(final Player player, final boolean force) {
 		Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 			ProtectionBlock pb = null;
@@ -587,8 +573,9 @@ public class ProtectionManager {
 								}
 							} else {
 								pb.setHiden(false);
-								pb.getLocation().getBlock().setTypeIdAndData(pb.getMaterial().getId(),
-										pb.getItemStack().getData().getData(), false);
+								pb.getLocation().getBlock().setType(pb.getMaterial());
+								pb.getLocation().getBlock().setBlockData((BlockData) pb.getItemStack().getData());
+
 							}
 						}
 					});
@@ -771,7 +758,7 @@ public class ProtectionManager {
 						@Override
 						public void run() {
 							plugin.getWG().setFlag(pb.getPcr(), pb.getWorld(),
-									DefaultFlag.fuzzyMatchFlag(plugin.wg.wgp.getFlagRegistry(), flagName), value);
+									Flags.fuzzyMatchFlag(plugin.wg.worldguard.getFlagRegistry(), flagName), value);
 						}
 					});
 				}

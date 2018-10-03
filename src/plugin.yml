@@ -3,8 +3,8 @@ version: "2.0.9 Release"
 main: me.libelula.pb.Main
 description: Libelula Protection Blocks
 author: Diego D'Onofrio <ddonofrio@member.fsf.org>
-depends: [WorldGuard]
-softdepends: [Vault, ProtectionStones]
+depend: [WorldGuard, WorldEdit]
+softdepend: [Vault]
 load: POSTWORLD
 website: http://libelula.me/
 commands:
