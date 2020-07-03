@@ -34,11 +34,11 @@ import org.bukkit.ChatColor;
  */
 public class TextManager {
 
-    private final Main plugin;
+    private final LibelulaProtectionBlocks plugin;
     private Locale currentLocale;
     private ResourceBundle messages;
 
-    public TextManager(Main plugin) {
+    public TextManager(LibelulaProtectionBlocks plugin) {
         this.plugin = plugin;
     }
 

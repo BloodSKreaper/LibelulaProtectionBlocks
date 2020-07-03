@@ -1,12 +1,16 @@
 name: LibelulaProtectionBlocks
 version: "2.0.9 Release"
-main: me.libelula.pb.Main
+main: me.libelula.pb.LibelulaProtectionBlocks
 description: Libelula Protection Blocks
 author: Diego D'Onofrio <ddonofrio@member.fsf.org>
+authors:
+  - Diego D'Onofrio <ddonofrio@member.fsf.org
+  - Christian Ochs <bloodskreaper@craftersforever.de>
 depend: [WorldGuard, WorldEdit]
 softdepend: [Vault]
 load: POSTWORLD
 website: http://libelula.me/
+api-version:  1.16
 commands:
   ps:
     description: Libelula Protection Blocks Main Command
@@ -24,9 +28,6 @@ permissions:
        pb.removemember.others: true
        pb.remove.all: true
        pb.version: true
-       pb.unhide.force: true
-       pb.hide: true
-       pb.hideothers: true
        pb.shop.create: true
        pb.modifyflags: true
        pb.modifyflags.others: true
@@ -46,8 +47,6 @@ permissions:
        pb.removemember.others: true
        pb.remove.all: true
        pb.version: true
-       pb.unhide.force: true
-       pb.hideothers: true
        pb.shop.create: true
        pb.modifyflags.others: true
        pb.info.others: true
@@ -59,7 +58,6 @@ permissions:
      children:
        pb.buy: true
        pb.place: true
-       pb.hide: true
        pb.modifyflags: true
        pb.version: true
   pb.addmember.others:
@@ -72,14 +70,8 @@ permissions:
     description: Allows player to remove members to other player protection blocks.
   pb.shop.create: 
     description: Allows player to create sign's shopb.
-    pb.version:
+  pb.version:
     description: Allows player to see plugin Name, version and creator.
-  pb.unhide.force:
-    description: Allows player to unhide not hidden or stolen protection blocks.
-  pb.hide:
-    description: Allows player to hide/unhide him protection blocks.
-  pb.hide.others:
-    description: Allows player to hide/unhide other player protection blocks.
   pb.remove.all:
     description: Allows player to remove all protection blocks from a player.
   pb.reload:

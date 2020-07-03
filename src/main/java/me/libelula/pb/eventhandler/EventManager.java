@@ -1,7 +1,7 @@
 /*
  *            This file is part of  LibelulaProtectionBlocks.
  *
- *   LibelulaProtectionBlocks is free software: you can redistribute it and/or 
+ *   LibelulaProtectionBlocks is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
@@ -12,9 +12,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with  LibelulaProtectionBlocks. 
+ *  along with  LibelulaProtectionBlocks.
  *  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package me.libelula.pb.eventhandler;
 
@@ -23,24 +23,20 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPistonExtendEvent;
-import org.bukkit.event.block.BlockPistonRetractEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.ItemSpawnEvent;
 
-import me.libelula.pb.Main;
+import me.libelula.pb.LibelulaProtectionBlocks;
 
 /**
- *
  * @author Diego D'Onofrio <ddonofrio@member.fsf.org>
  */
 public class EventManager implements Listener {
 
-    private final Main plugin;
+    private final LibelulaProtectionBlocks plugin;
 
-    public EventManager(Main plugin) {
+    public EventManager(LibelulaProtectionBlocks plugin) {
         this.plugin = plugin;
     }
 
@@ -49,54 +45,92 @@ public class EventManager implements Listener {
                 registerEvents(this, plugin);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent e) {
-        if (plugin.pm.isPB(e.getItemInHand())) {
-            plugin.pm.placePb(e);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent e) {
-        if (plugin.pm.isPB(e.getBlock())) {
-            plugin.pm.breakPb(e);
-        }
-    }
-
+    /*
+    All relevant events for ProtectionBlocks:
+    * BlockBurnEvent | Event gets cancelled if block is ProtectionBlock
+    * BlockExplodeEvent | Event gets cancelled if block is ProtectionBlock
+    * BlockPistonEvent (BlockPistonExtendEvent, BlockPistonRetractEvent) | ProtectionBlock cannot be moved
+    * BlockPlaceEvent | Gets handled by the ProtectionManager
+    * BlockBreakEvent | Gets handled by the ProtectionManager
+    * EntityChangeBlockEvent | Event gets cancelled if block is ProtectionBlock
+     */
+    @SuppressWarnings("unused")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onItemDrop(ItemSpawnEvent e) {
-        if (plugin.pm.cancelDrop(e.getLocation())) {
+    public void onBlockPlace(BlockPlaceEvent e) {
+        if (plugin.getProtectionManager().isPB(e.getItemInHand())) {
+            plugin.getProtectionManager().placePb(e);
+        }
+    }
+
+    /*
+    Handles the breaking of a protection block
+     */
+    @SuppressWarnings("unused")
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent e) {
+        if (plugin.getProtectionManager().isPB(e.getBlock())) {
+            plugin.getProtectionManager().breakPb(e);
+        }
+    }
+
+    /*
+    Handles the breaking of a protection block by entities (e.g. endermen)
+    */
+    @SuppressWarnings("unused")
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityGrief(EntityChangeBlockEvent e) {
+        if (e.getEntityType() != EntityType.PLAYER) {
+            if (plugin.getProtectionManager().isPB(e.getBlock())) {
+                e.setCancelled(true);
+            }
+        }
+    }
+
+    /*
+    Handles the burning of a protection block
+    */
+    @SuppressWarnings("unused")
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBurn(BlockBurnEvent e) {
+        if (plugin.getProtectionManager().isPB(e.getBlock())) {
             e.setCancelled(true);
         }
     }
 
+
+    /*
+    Prevents a protection block from being moved when a piston is extended
+     */
+    @SuppressWarnings("unused")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent e) {
-        for (Block pushedBlock : e.getBlocks()) {
-            if (!plugin.pm.isHidden(pushedBlock.getLocation())) {
+        for (Block block : e.getBlocks()) {
+            if (plugin.getProtectionManager().isPB(block)) {
                 e.setCancelled(true);
             }
         }
     }
 
+    /*
+    Prevents a protection block from being moved when a piston is retracted
+    */
+    @SuppressWarnings("unused")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent e) {
         for (Block RetractedBlock : e.getBlocks()) {
-            if (!plugin.pm.isHidden(RetractedBlock.getLocation())) {
+            if (plugin.getProtectionManager().isPB(RetractedBlock)) {
                 e.setCancelled(true);
             }
         }
     }
 
+    /*
+    Prevents a protection block from being removed when an explosion happens
+     */
+    @SuppressWarnings("unused")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent e) {
-        if (e.getEntity().getType() == EntityType.PRIMED_TNT) {
-            for (Block block : e.blockList()) {
-                if (!plugin.pm.isHidden(block.getLocation())) {
-                    e.blockList().remove(block);
-                }
-            }
-        }
+        e.blockList().removeIf(block -> plugin.getProtectionManager().isPB(block));
     }
 
 }
