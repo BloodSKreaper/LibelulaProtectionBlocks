@@ -252,7 +252,7 @@ public class ProtectionBlock implements Comparable<ProtectionBlock> {
 
             result.add(tm.getText("region_info_flags", StringFromMap(pcr.getFlags())));
 
-            if (!pcr.getOwners().getPlayerDomain().getPlayers().isEmpty()) {
+            if (!pcr.getOwners().getPlayers().isEmpty()) {
                 result.add(tm.getText("region_info_owners", PlayersFromList(pcr.getOwners().getPlayers())));
             } else {
                 result.add(tm.getText("region_info_owners", ChatColor.ITALIC + tm.getText("no_players")));
